@@ -1,6 +1,10 @@
 # Kyasher
 Kyash APIラッパー Python用
-### >> ```pip install kyasher``` <<
+## インストール
+```py
+pip install kyasher
+```
+必須：requests, bs4, pkce
 ## 使い方
 #### example.py  
 ```py
