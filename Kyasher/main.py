@@ -2,6 +2,7 @@ import requests
 from uuid import uuid4
 import datetime
 from bs4 import BeautifulSoup
+from typing import NamedTuple
 
 class KyashError(Exception):
     pass
@@ -71,7 +72,7 @@ class Kyash():
                 self.refresh_token=login["result"]["data"]["refreshToken"]
                 self.headers["X-Auth"]=access_token
                     
-    def login(self,otp:str) -> dict:
+    def login(self,otp:str):
         payload={
             "verificationCode":otp,
             "email":self.email
@@ -86,7 +87,7 @@ class Kyash():
 
         return get_token
 
-    def get_profile(self) -> dict:
+    def get_profile(self):
         if not self.access_token:
             raise KyashLoginError("まずはログインしてください")
         
@@ -94,16 +95,33 @@ class Kyash():
         if getprofile["code"]!=200:
             raise KyashError(getprofile["error"]["message"])
         
-        self.username=getprofile["result"]["data"]["userName"]
-        self.icon=getprofile["result"]["data"]["imageUrl"]
-        self.myouzi=getprofile["result"]["data"]["lastNameReal"]
-        self.namae=getprofile["result"]["data"]["firstNameReal"]
-        self.phone=getprofile["result"]["data"]["phoneNumber"]
-        self.is_kyc=getprofile["result"]["data"]["kyc"]
+        username=getprofile["result"]["data"]["userName"]
+        icon=getprofile["result"]["data"]["imageUrl"]
+        myouzi=getprofile["result"]["data"]["lastNameReal"]
+        namae=getprofile["result"]["data"]["firstNameReal"]
+        phone=getprofile["result"]["data"]["phoneNumber"]
+        is_kyc=getprofile["result"]["data"]["kyc"]
 
-        return getprofile
+        class Profile(NamedTuple):
+            username: str
+            icon: str
+            myouzi: str
+            namae: str
+            phone: str
+            is_kyc: bool
+            raw: dict 
 
-    def get_wallet(self) -> dict:
+        return Profile(
+            username=username,
+            icon=icon,
+            myouzi=myouzi,
+            namae=namae,
+            phone=phone,
+            is_kyc=is_kyc,
+            raw=getprofile
+        )
+
+    def get_wallet(self):
         if not self.access_token:
             raise KyashLoginError("まずはログインしてください")
         
@@ -111,15 +129,30 @@ class Kyash():
         if getwallet["code"]!=200:
             raise KyashError(getwallet["error"]["message"])
         
-        self.wallet_uuid=getwallet["result"]["data"]["uuid"]
-        self.all_balance=getwallet["result"]["data"]["balance"]["amount"]
-        self.money=getwallet["result"]["data"]["balance"]["amountBreakdown"]["kyashMoney"]
-        self.value=getwallet["result"]["data"]["balance"]["amountBreakdown"]["kyashValue"]
-        self.point=getwallet["result"]["data"]["pointBalance"]["availableAmount"]
+        wallet_uuid=getwallet["result"]["data"]["uuid"]
+        all_balance=getwallet["result"]["data"]["balance"]["amount"]
+        money=getwallet["result"]["data"]["balance"]["amountBreakdown"]["kyashMoney"]
+        value=getwallet["result"]["data"]["balance"]["amountBreakdown"]["kyashValue"]
+        point=getwallet["result"]["data"]["pointBalance"]["availableAmount"]
 
-        return getwallet
+        class Wallet(NamedTuple):
+            uuid: str
+            all_balance: int
+            money: int
+            value: int
+            point: int
+            raw: dict
+
+        return Wallet(
+            wallet_uuid=wallet_uuid,
+            all_balance=all_balance,
+            money=money,
+            value=value,
+            point=point,
+            raw=getwallet
+        )
     
-    def get_history(self,wallet_uuid:str=None,limit:int=3) -> dict:
+    def get_history(self,wallet_uuid:str=None,limit:int=3):
         if not self.access_token:
             raise KyashLoginError("まずはログインしてください")
         
@@ -134,11 +167,18 @@ class Kyash():
         if gethistory["code"]!=200:
             raise KyashError(gethistory["error"]["message"])
         
-        self.timelines=gethistory["result"]["data"]["timelines"]
+        timelines=gethistory["result"]["data"]["timelines"]
+        
+        class History(NamedTuple):
+            timelines: list
+            raw: dict
 
-        return gethistory
+        return History(
+            timelines=timelines,
+            raw=gethistory
+        )
     
-    def get_summary(self,year:int=None,month:int=None) -> dict:
+    def get_summary(self,year:int=None,month:int=None):
         if not self.access_token:
             raise KyashLoginError("まずはログインしてください")
         
@@ -156,11 +196,18 @@ class Kyash():
         if getsummary["code"]!=200:
             raise KyashError(getsummary["error"]["message"])
 
-        self.summary=getsummary["result"]["data"]["summary"]
+        summary=getsummary["result"]["data"]["summary"]
+        
+        class Summary(NamedTuple):
+            summary: dict
+            raw: dict
 
-        return getsummary
+        return Summary(
+            summary=summary,
+            raw=getsummary
+        )
 
-    def create_link(self,amount:int,message:str="",is_claim:bool=False) -> dict:
+    def create_link(self,amount:int,message:str="",is_claim:bool=False):
         if not self.access_token:
             raise KyashLoginError("まずはログインしてください")
         
@@ -183,11 +230,18 @@ class Kyash():
         if create["code"]!=200:
             raise KyashError(create["error"]["message"])
         
-        self.created_link=create["result"]["data"]["link"]
+        link=create["result"]["data"]["link"]
 
-        return create
+        class CreateLink(NamedTuple):
+            link: str
+            raw: dict
 
-    def link_check(self,url:str) -> dict:
+        return CreateLink(
+            link=link,
+            raw=create
+        )
+
+    def link_check(self,url:str):
         if not self.access_token:
             raise KyashLoginError("まずはログインしてください")
         
@@ -198,25 +252,42 @@ class Kyash():
             link_info=requests.get(url).text
             soup=BeautifulSoup(link_info,"html.parser")
             try:
-                self.link_amount=soup.find(class_="amountText text_send").text.replace("¥","")
-                self.link_uuid=soup.find(class_="btn_send").get("data-href-app").replace("kyash://claim/","")
-                self.send_to_me=True
+                link_amount=soup.find(class_="amountText text_send").text.replace("¥","")
+                link_uuid=soup.find(class_="btn_send").get("data-href-app").replace("kyash://claim/","")
+                send_to_me=True
             except:
-                self.link_amount=soup.find(class_="amountText text_request").text.replace("¥","")
-                self.link_uuid=soup.find(class_="btn_request").get("data-href-app").replace("kyash://request/u/","")
-                self.send_to_me=False
+                link_amount=soup.find(class_="amountText text_request").text.replace("¥","")
+                link_uuid=soup.find(class_="btn_request").get("data-href-app").replace("kyash://request/u/","")
+                send_to_me=False
             
             link_info=requests.get(f"https://api.kyash.me/v1/links/{self.link_uuid}",headers=self.headers,proxies=self.proxy).json()
             if link_info["code"]!=200:
                 raise KyashError(link_info["error"]["message"])
-            self.link_public_id=link_info["result"]["data"]["target"]["publicId"]
-            self.link_sender_name=link_info["result"]["data"]["target"]["userName"]
+            
+            link_public_id=link_info["result"]["data"]["target"]["publicId"]
+            link_sender_name=link_info["result"]["data"]["target"]["userName"]
+
         except:
             raise KyashError("処理済みのリンクのため、チェックに失敗しました")
 
-        return link_info
+        class LinkInfo(NamedTuple):
+            amount: int
+            uuid: str
+            public_id: str
+            sender_name: str
+            send_to_me: bool
+            raw: dict
+
+        return LinkInfo(
+            link_amount=int(link_amount),
+            link_uuid=link_uuid,
+            link_public_id=link_public_id,
+            link_sender_name=link_sender_name,
+            send_to_me=send_to_me,
+            raw=link_info
+        )
     
-    def link_recieve(self,url:str=None,link_uuid:str=None) -> dict:
+    def link_recieve(self,url:str=None,link_uuid:str=None):
         if not self.access_token:
             raise KyashLoginError("まずはログインしてください")
         
@@ -244,7 +315,7 @@ class Kyash():
         
         return recieve
     
-    def link_cancel(self,url:str=None,link_uuid:str=None) -> dict:
+    def link_cancel(self,url:str=None,link_uuid:str=None):
         if not self.access_token:
             raise KyashLoginError("まずはログインしてください")
         
@@ -285,7 +356,7 @@ class Kyash():
                 link_info=requests.get(f"https://api.kyash.me/v1/links/{link_uuid}",headers=self.headers,proxies=self.proxy).json()
                 if link_info["code"]!=200:
                     raise KyashError(link_info["error"]["message"])
-                print(link_info)
+
                 link_public_id=link_info["result"]["data"]["target"]["publicId"]
                 link_sender_name=link_info["result"]["data"]["target"]["userName"]
             except:
