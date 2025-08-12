@@ -72,5 +72,5 @@ Kyashが最近iOS 15のサポートを終了するって発表してたけど、
 iOSは2,3年落ちになっただけでいろんなアプリに対応を切られてサイドローディングもろくにできないから寿命が短い (＋インストールしたことのないアプリはAppStore++でも使わない限り過去バージョンをダウンロードできないから余計に)  
 Androidなんかがんばればロリポップですらまだ使えるのに (32bitはそろそろちょっときついかなぁ)
 ## コンタクト  
-Discord サーバー / https://discord.gg/aSyaAK7Ktm  
+Discord サーバー / https://discord.gg/g4UE3kQbmS  
 Discord ユーザー名 / .taka.  
