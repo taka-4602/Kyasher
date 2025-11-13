@@ -30,12 +30,12 @@ class Kyash():
         else:
             self.installation_uuid=str(uuid4()).upper()
 
-        try:
-            iosstore=requests.get("https://apps.apple.com/jp/app/kyash-%E3%82%AD%E3%83%A3%E3%83%83%E3%82%B7%E3%83%A5-%E3%83%81%E3%83%A3%E3%83%BC%E3%82%B8%E5%BC%8Fvisa%E3%82%AB%E3%83%BC%E3%83%89/id1084264883",proxies=proxy)
-        except Exception as e:
-            raise NetWorkError(e)
+        #try:
+        #    iosstore=requests.get("https://apps.apple.com/jp/app/kyash-%E3%82%AD%E3%83%A3%E3%83%83%E3%82%B7%E3%83%A5-%E3%83%81%E3%83%A3%E3%83%BC%E3%82%B8%E5%BC%8Fvisa%E3%82%AB%E3%83%BC%E3%83%89/id1084264883",proxies=proxy)
+        #except Exception as e:
+        #    raise NetWorkError(e)
         
-        self.version=BeautifulSoup(iosstore.text,"html.parser").find(class_="l-column small-6 medium-12 whats-new__latest__version").text.split()[1]
+        self.version="11.8.1"#BeautifulSoup(iosstore.text,"html.parser").find(class_="l-column small-6 medium-12 whats-new__latest__version").text.split()[1]
         self.headers={
             "Host": "api.kyash.me",
             "Content-Type": "application/json",
